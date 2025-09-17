@@ -2,7 +2,7 @@
 # !/usr/bin/env python
 # -*- coding: UTF-8 -*-
 """
-CLIC model builder
+CLIC model builder - CPU compatible version
 """
 
 import torch
@@ -12,10 +12,10 @@ import torch.nn as nn
 class CLIC(nn.Module):
     """
     Build a CLIC model with: a query encoder, a key encoder, and a queue
-    Modified from MoCo
+    CPU-compatible version
     """
 
-    def __init__(self, base_encoder, dim=128, K=65536, m=0.999, T=0.07):
+    def __init__(self, base_encoder, dim=128, K=65536, m=0.999, T=0.07, device='cpu'):
         """
         Args:
             base_encoder: backbone encoder (e.g., ResNet)
@@ -23,12 +23,14 @@ class CLIC(nn.Module):
             K: queue size; number of negative keys (default: 65536)
             m: momentum of updating key encoder (default: 0.999)
             T: softmax temperature (default: 0.07)
+            device: device to run on ('cpu' or 'cuda')
         """
         super(CLIC, self).__init__()
 
         self.K = K
         self.m = m
         self.T = T
+        self.device = device
 
         # Create the encoders
         self.encoder_q = base_encoder(num_classes=dim)
@@ -73,10 +75,11 @@ class CLIC(nn.Module):
     def _batch_shuffle_ddp(self, x):
         """
         Batch shuffle, for making use of BatchNorm.
+        CPU-compatible version
         """
         # Random shuffle index
         batch_size = x.shape[0]
-        idx_shuffle = torch.randperm(batch_size).cuda()
+        idx_shuffle = torch.randperm(batch_size).to(x.device)  # Use same device as input
 
         # Shuffle
         x_shuffled = x[idx_shuffle]
@@ -129,7 +132,7 @@ class CLIC(nn.Module):
         logits /= self.T
 
         # Labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+        labels = torch.zeros(logits.shape[0], dtype=torch.long).to(logits.device)
 
         # Dequeue and enqueue
         self._dequeue_and_enqueue(k)
