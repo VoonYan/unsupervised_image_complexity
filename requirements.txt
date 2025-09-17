@@ -8,3 +8,4 @@ tqdm
 scipy
 Pillow
 datasets
+clic
