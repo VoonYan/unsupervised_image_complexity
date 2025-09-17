@@ -10,7 +10,7 @@ def download_and_prepare_flickr():
     """Download and prepare Flickr dataset"""
 
     # Download parquet URLs
-    url = "https://huggingface.co/api/datasets/bigdata-pw/Flickr/parquet"
+    url = "https://huggingface.co/datasets/jxie/flickr8k"
     output_file = "./data/parquet_urls.json"
 
     response = requests.get(url, stream=True)
