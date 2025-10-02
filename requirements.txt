@@ -9,3 +9,6 @@ scipy
 Pillow
 datasets
 clic
+matplotlib
+sklearn
+seaborn
