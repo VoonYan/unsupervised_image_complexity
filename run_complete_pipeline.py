@@ -1,89 +1,59 @@
 # run_complete_pipeline.py
-# !/usr/bin/env python
 """
-Complete pipeline to run the CLIC project
+Run the complete CLIC pipeline from start to finish
 """
 
-import os
 import subprocess
 import sys
+import os
+import time
 
 
-def check_requirements():
-    """Check if all requirements are installed"""
-    required_packages = ['torch', 'torchvision', 'numpy', 'pandas', 'scipy', 'PIL', 'tqdm']
+def run_step(step_name, command):
+    """Run a pipeline step"""
+    print("\n" + "=" * 60)
+    print(f"STEP: {step_name}")
+    print("=" * 60)
 
-    for package in required_packages:
-        try:
-            __import__(package)
-            print(f"✓ {package} is installed")
-        except ImportError:
-            print(f"✗ {package} is not installed")
-            return False
+    start = time.time()
+    result = subprocess.run(command, shell=True)
+    elapsed = time.time() - start
+
+    if result.returncode == 0:
+        print(f"✓ {step_name} completed in {elapsed:.2f} seconds")
+    else:
+        print(f"✗ {step_name} failed")
+        return False
+
     return True
 
 
-def setup_directories():
-    """Create necessary directory structure"""
-    directories = [
-        './clic_data/images',
-        './Flickr/parquet',
-        './Flickr/train',
-        './ImageNet/train',
-        './IC9600/images',
-        './ckpts',
-        './logs'
+def main():
+    print("\n" + "=" * 70)
+    print("CLIC: Complete Pipeline Execution")
+    print("=" * 70)
+
+    steps = [
+        ("Data Preparation", "python quick_setup.py"),
+        ("Unsupervised Pre-training", "python train_cpu.py"),
+        ("Fine-tuning on IC9600", "python fine_tuning.py"),
+        ("Model Evaluation", "python evaluate_model.py"),
+        ("Feature Visualization", "python visualize_features.py")
     ]
 
-    for directory in directories:
-        os.makedirs(directory, exist_ok=True)
-        print(f"Created directory: {directory}")
+    for step_name, command in steps:
+        if not run_step(step_name, command):
+            print(f"\nPipeline stopped at: {step_name}")
+            break
 
-
-def main():
-    print("=" * 60)
-    print("CLIC: Contrastive Learning for Image Complexity")
-    print("=" * 60)
-
-    # Step 1: Check requirements
-    print("\n1. Checking requirements...")
-    if not check_requirements():
-        print("Please install missing requirements:")
-        print("pip install torch torchvision numpy pandas scipy pillow tqdm")
-        return
-
-    # Step 2: Setup directories
-    print("\n2. Setting up directories...")
-    setup_directories()
-
-    # Step 3: Data preparation
-    print("\n3. Data Preparation")
-    print("Please ensure you have:")
-    print("  - ImageNet dataset in ./ImageNet/")
-    print("  - Run download_flickr.py to get Flickr data")
-    print("  - Run uniform_sample.py to create CLIC dataset")
-
-    response = input("\nHave you prepared the data? (y/n): ")
-    if response.lower() != 'y':
-        print("Please prepare the data first.")
-        return
-
-    # Step 4: Training
-    print("\n4. Starting unsupervised training...")
-    print("This will train for 200 epochs on the CLIC dataset")
-    response = input("Start training? (y/n): ")
-    if response.lower() == 'y':
-        subprocess.run([sys.executable, "train.py"])
-
-    # Step 5: Fine-tuning
-    print("\n5. Fine-tuning on IC9600")
-    response = input("Start fine-tuning? (y/n): ")
-    if response.lower() == 'y':
-        subprocess.run([sys.executable, "fine_tuning.py"])
-
-    print("\n" + "=" * 60)
-    print("Pipeline completed!")
-    print("=" * 60)
+    print("\n" + "=" * 70)
+    print("Pipeline Complete! Check the following outputs:")
+    print("=" * 70)
+    print("1. Model checkpoints: ./checkpoints/")
+    print("2. Complexity ranking: ./complexity_ranking.png")
+    print("3. t-SNE visualization: ./tsne_visualization.png")
+    print("4. Attention maps: ./attention_maps.png")
+    print("=" * 70)
 
 
 if __name__ == "__main__":
